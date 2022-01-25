@@ -1,3 +1,5 @@
+# CantileverBeam Module
+
 import numpy as np
 from scipy import linalg
 
@@ -42,6 +44,19 @@ class CantileverBeam:
         self.reset()
         self.noisestd = noisestd        
         self.setaccelg(False)
+
+    
+    def getModeShapes(self):
+        """
+            Get data for plotting the modal curves.
+
+            Returns:
+                x: Vector containing the positions along the beam.
+                m: mode plots (m[:,0] for the first mode, m[:,1] for the second, etc)
+        """
+        x = np.linspace(0,self.length,num=self.npoints)
+        return x,self.vmod
+
 
     def evaluateModesAndFreqs(self):
         I = (self.width * self.thickness**3) / 12 # Inertial moment
