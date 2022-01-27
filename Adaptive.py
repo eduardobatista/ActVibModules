@@ -30,7 +30,7 @@ class FIRNLMS:
             self.xx[0] = insignal[n]
             y = self.xx @ self.ww
             e = outsignal[n] - y
-            self.ww = self.ww + self.mu * e * self.xx / (self.xx @ self.xx - self.psi)
+            self.ww = self.ww + self.mu * e * self.xx / (self.xx @ self.xx + self.psi)
             self.sqerror[n] = e**2            
         self.finished = True
 
