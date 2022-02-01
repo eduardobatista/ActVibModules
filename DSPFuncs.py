@@ -1,5 +1,20 @@
 import numpy as np
 
+def easyFFT(x: np.ndarray, fs: float = 1.0):
+  """
+    Evaluate the one-sided FFT in dB.
+    Parameters:
+      x: vector containing the signal in time.
+      fs: the sampling frequency. 
+    Returns: (magdb,freqvec)
+      magdb: vector containing the magnitude samples of the fft (dB).
+      freqs: vector containing the frequency values (Hz).
+  """
+  nsamples = x.shape[0]
+  magdb = 20*np.log10( 2*np.abs(np.fft.fft(x)/nsamples)[0:int(np.floor(nsamples/2))] )
+  freqs = (np.fft.fftfreq(nsamples) * 250)[0:magdb.shape[0]]
+  return magdb,freqs
+
 class DCRemover():
   
   # http://sam-koblenski.blogspot.com/2015/11/everyday-dsp-for-programmers-dc-and.html
@@ -17,3 +32,5 @@ class DCRemover():
       sf.wn = x[k] + sf.alpha * sf.wn1
       sf.y[k] = sf.wn - sf.wn1
     return sf.y
+
+
