@@ -20,12 +20,14 @@ class CantileverBeam:
         self.nmodes = nmodes
         self.width = width
         self.thickness = thickness
-        self.length = length
+        self.length = length        
         self.density = density
         self.elasticmod = elasticmod
         self.forcescaler = forcescaler  # Permite definir um "scaler" para força, simulando por exemplo uma conversão de Volts para Newton caso a força seja gerada a partir de uma tensão elétrica.        
         self.forcescaler1 = forcescaler
-        self.magnetdist = 1e-3
+        self.deltax = self.length / (self.npoints - 1)  # Checar isso
+        self.rotvelmultiplier = (1 / self.deltax) * 180 / np.pi
+        self.magnetdist = 1e-3        
         self.evaluateModesAndFreqs()
         self.memiir = 3
         self.Fs = 1 / self.Ts
@@ -63,14 +65,13 @@ class CantileverBeam:
         beam_mass = self.density * self.width * self.thickness * self.length
         # Mass matrix:
         M = np.matrix( np.eye(self.npoints) * (beam_mass/self.npoints) )
-        M[0,0] = M[0,0]/2
-        deltax = self.length / self.npoints
+        M[0,0] = M[0,0]/2        
         A = np.zeros((self.npoints,self.npoints))
         for r in range(self.npoints):
             for c in range(r+1):
                 k = self.npoints-r
                 l = self.npoints-c
-                A[r,c] = ((deltax**3)/(6*self.elasticmod*I)) * (3* k**2 * l - k**3)
+                A[r,c] = ((self.deltax**3)/(6*self.elasticmod*I)) * (3* k**2 * l - k**3)
                 A[c,r] = A[r,c]
         K = linalg.inv(A)
         L = linalg.cholesky(M)
@@ -116,6 +117,7 @@ class CantileverBeam:
         self.yiir = np.zeros((self.npoints,self.memiir))
         self.bufdesloc = np.zeros(self.npoints)
         self.bufvel = np.zeros((self.npoints,2))
+        self.rotvel = np.zeros(self.npoints)  # Trying to implement rotation velocity, in degrees per second.
 
     def update(self):
         self.bufvel[:,1] = self.bufvel[:,0]
@@ -129,3 +131,4 @@ class CantileverBeam:
             self.x = self.x + self.Ts / (self.m*self.wd[k]) * self.yiir[k,0] * self.vmod[:,k]        
         self.bufvel[:,0] = (self.x - self.bufdesloc) * self.Fs
         self.a = (self.bufvel[:,0] - self.bufvel[:,1]) * self.Fs
+        self.rotvel[1:] = (self.bufvel[1:,0] - self.bufvel[:-1,0]) * self.rotvelmultiplier
