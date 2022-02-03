@@ -1,8 +1,8 @@
 import numpy as np
 
-def easyFFT(x: np.ndarray, fs: float = 1.0):
+def easyFourier(x: np.ndarray, fs: float = 1.0):
   """
-    Evaluate the one-sided FFT in dB.
+    Evaluate the magnitude Fourier spectrum in dB using the FFT.
     Parameters:
       x: vector containing the signal in time.
       fs: the sampling frequency. 
