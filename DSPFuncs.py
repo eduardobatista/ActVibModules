@@ -12,8 +12,9 @@ def easyFourier(x: np.ndarray, fs: float = 1.0):
   """
   nsamples = x.shape[0]
   magdb = 20*np.log10( 2*np.abs(np.fft.fft(x)/nsamples)[0:int(np.floor(nsamples/2))] )
-  freqs = (np.fft.fftfreq(nsamples) * 250)[0:magdb.shape[0]]
+  freqs = (np.fft.fftfreq(nsamples) * fs)[0:magdb.shape[0]]
   return magdb,freqs
+
 
 class DCRemover():
   
