@@ -47,15 +47,15 @@ class ActVibData:
     def getGyroZ(self,imuidx=1):
         return self.data[f"IMU{imuidx}GyroZ"].values
 
-    def getDACData(self,dacid=1):
-        if (dacid < 1) or (dacid > 4):
-            raise BaseException("DACid must be between 1 and 4.")
-        daccols = list(filter(lambda x: x.startswith("DAC"), self.getSignalNames()))
-        return self.data[daccols[dacid-1]].values
+    def getADCData(self,adcid=1):
+        if (adcid < 1) or (adcid > 4):
+            raise BaseException("ADCid must be between 1 and 4.")
+        adccols = list(filter(lambda x: x.startswith("ADC"), self.getSignalNames()))
+        return self.data[adccols[adcid-1]].values
 
-    def getDAC1kHzData(self):
-        daccols = list(filter(lambda x: x.startswith("DAC"), self.getSignalNames()))
-        return self.data[daccols].values.reshape((self.data.shape[0]*4))
+    def getADC1kHzData(self):
+        adccols = list(filter(lambda x: x.startswith("ADC"), self.getSignalNames()))
+        return self.data[adccols].values.reshape((self.data.shape[0]*4))
 
     def getNotes(self):
         if not self.hasLog:
