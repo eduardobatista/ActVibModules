@@ -1,74 +1,94 @@
 import pandas as pd
 
-class ActVibData:
+class ActVibData(pd.DataFrame):
 
-    def __init__(self,filename):
-        self.filename = filename
-        self.data = pd.read_feather(filename)
-        if "Log" in self.data.columns:
+    def __init__(self,filename):        
+        super().__init__(pd.read_feather(filename))
+        self.filename = filename        
+        if "Tempo (s)" in self.columns:
+            self.oldcnamestonew()
+        if "log" in self.columns:
             self.hasLog = True
         else:
             self.hasLog = False
+        
+    def oldcnamestonew(self):
+        cnames = self.columns
+        newcnames = []
+        for k in range(len(cnames)):
+            if cnames[k].startswith("Tempo"):
+                newcnames.append("time")
+            elif cnames[k].startswith("IMU") or (cnames[k] == "Log"):
+                newcnames.append(cnames[k].lower())
+            elif cnames[k].startswith("DAC") or cnames[k].startswith("ADC"):
+                newcnames.append(cnames[k].replace(" ","").lower())
+            elif cnames[k] == "Perturbacao":
+                newcnames.append("perturb")
+            elif cnames[k] == "Controle":
+                newcnames.append("ctrl")
+            elif cnames[k] == "Referencia":
+                newcnames.append("ref")
+            elif cnames[k] == "Erro": 
+                 newcnames.append("err")
+        self.columns = newcnames 
 
     def getTime(self):
-        return self.data["Tempo (s)"].values
+        return self.time.values
 
     def getSignalNames(self):
-        return list(self.data.columns)
+        return list(self.columns)
 
     def getSignal(self,signalname):
         """
-            Signal name can be:
-               Tempo (s),
-               IMU1AccX, IMU1AccY, IMU1AccZ, 
-               IMU1GyroX,IMU1GyroY, IMU1GyroZ, 
-               IMU2AccX, IMU2AccY, IMU2AccZ, 
-               IMU2GyroX, IMU2GyroY, IMU2GyroZ,
-               IMU3AccX, IMU3AccY, IMU3AccZ, 
-               IMU3GyroX, IMU3GyroY, IMU3GyroZ 
+            Use getSignalNames() to get available signals.
+
         """
-        return self.data[signalname].values
+        return self[signalname].values
     
     def getAccX(self,imuidx=1):
-        return self.data[f"IMU{imuidx}AccX"].values
+        return self[f"imu{imuidx}accx"].values
     
     def getAccY(self,imuidx=1):
-        return self.data[f"IMU{imuidx}AccY"].values
+        return self[f"imu{imuidx}accy"].values
 
     def getAccZ(self,imuidx=1):
-        return self.data[f"IMU{imuidx}AccZ"].values
+        return self[f"imu{imuidx}accz"].values
 
     def getGyroX(self,imuidx=1):
-        return self.data[f"IMU{imuidx}GyroX"].values
+        return self[f"imu{imuidx}gyrox"].values
     
     def getGyroY(self,imuidx=1):
-        return self.data[f"IMU{imuidx}GyroY"].values
+        return self[f"imu{imuidx}gyroy"].values
 
     def getGyroZ(self,imuidx=1):
-        return self.data[f"IMU{imuidx}GyroZ"].values
+        return self[f"imu{imuidx}gyroz"].values
 
     def getADCData(self,adcid=1):
         if (adcid < 1) or (adcid > 4):
             raise BaseException("ADCid must be between 1 and 4.")
-        adccols = list(filter(lambda x: x.startswith("ADC"), self.getSignalNames()))
-        return self.data[adccols[adcid-1]].values
+        adccols = list(filter(lambda x: x.startswith("adc"), self.getSignalNames()))
+        if len(adccols) == 0:
+            raise BaseException("ADC data not found.")
+        return self[adccols[adcid-1]].values
 
     def getADC1kHzData(self):
-        adccols = list(filter(lambda x: x.startswith("ADC"), self.getSignalNames()))
-        return self.data[adccols].values.reshape((self.data.shape[0]*4))
+        adccols = list(filter(lambda x: x.startswith("adc"), self.getSignalNames()))
+        if len(adccols) == 0:
+            raise BaseException("ADC data not found.")
+        return self[adccols].values.reshape((self.shape[0]*4))
 
     def getNotes(self):
         if not self.hasLog:
-            raise BaseException(f"No notes found in {self.filename}.")
-        notes = self.data["Log"].head(1).values.tolist()[0]
+            raise BaseException(f"Notes and logs not found in {self.filename}.")
+        notes = self["log"].head(1).values.tolist()[0]
         if notes == "Started":
-            raise BaseException(f"No notes found in {self.filename}.")
+            raise BaseException(f"Notes not found in {self.filename}.")
         return notes
 
     def getLogs(self):
         if not self.hasLog:
             raise BaseException(f"No logs found in {self.filename}.")
-        logs = self.data[["Tempo (s)","Log"]][self.data["Log"].notnull()].values.tolist()
+        logs = self[["time","log"]][self["log"].notnull()].values.tolist()
         if logs[0][1] != "Started":
             logs = logs[1:]
         return logs
