@@ -16,6 +16,20 @@ def easyFourier(x: np.ndarray, fs: float = 1.0):
   return magdb,freqs
 
 
+def ARSmooth(sig,coef=0.95):
+  """
+    AR signal smoother.
+    - sig is the signal;
+    - coef is the AR coef.
+  """
+  last = 0
+  out = np.zeros(sig.shape)
+  for n in range(0,sig.shape[0]):
+    out[n] = coef*last + sig[n]*(1-coef)
+    last = out[n]
+  return out
+
+
 class DCRemover():
   
   # http://sam-koblenski.blogspot.com/2015/11/everyday-dsp-for-programmers-dc-and.html
