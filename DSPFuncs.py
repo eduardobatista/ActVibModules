@@ -1,26 +1,38 @@
 import numpy as np
 
-def easyFourier(x: np.ndarray, fs: float = 1.0, N: int = None):
+def easyFourier(x: np.ndarray, fs: float = 1.0, N: int = None, downsamplemode: str = "decimate"):
   """
     Evaluate the magnitude Fourier spectrum in dB using the FFT.
     Parameters:
       x: vector containing the signal in time.
       fs: the sampling frequency. 
-      N: approximate number os samples of the transformed signal
-         (must be larger than the length of x)
-         (WARNING: obtained via subsampling, data may be lost).
+      N: Either the number of samples for the transformed signal (when downsamplemode = "truncate") 
+         or the approximate number os samples of the transformed signal (when downsamplemode = "decimate")
+         (must be smaller than or equal to the length of x)
+         (WARNING: obtained via decimation, data may be lost).
+      downsamplemode: "decimate" (where the whole signal is considered when carrying out the FFT) or
+                      "truncate" (considers only the first N samples of the signal - standard for numpy.fft)
     Returns: (magdb,freqvec)
       magdb: vector containing the magnitude samples of the fft (dB).
       freqs: vector containing the frequency values (Hz).
   """
   nsamples = x.shape[0]
-  magdb = 20*np.log10( 2*np.abs(np.fft.fft(x)/nsamples)[0:int(np.floor(nsamples/2))] )
-  freqs = (np.fft.fftfreq(nsamples) * fs)[0:magdb.shape[0]]
-  if N:
-    factor = int(np.ceil(float(nsamples)/float(N)))
-    return magdb[::factor],freqs[::factor]
-  else:
+  if downsamplemode == "decimate":
+    magdb = 20*np.log10( 2*np.abs(np.fft.fft(x)/nsamples)[0:int(np.floor(nsamples/2))] )
+    freqs = (np.fft.fftfreq(nsamples) * fs)[0:magdb.shape[0]]
+    if N:
+      factor = int(np.ceil(float(nsamples)/float(N)))
+      return magdb[::factor],freqs[::factor]
+    else:
+      return magdb,freqs
+  elif downsamplemode == "truncate":
+    if not N:
+      N = nsamples
+    magdb = 20*np.log10( 2*np.abs(np.fft.fft(x,N)/N)[0:int(np.floor(N/2))] )
+    freqs = (np.fft.fftfreq(N) * fs)[0:magdb.shape[0]]
     return magdb,freqs
+  else:
+    raise BaseException("Invalid value for downsamplemode.")
 
 
 def ARSmooth(sig,coef=0.95):
