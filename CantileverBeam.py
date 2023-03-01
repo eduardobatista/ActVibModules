@@ -108,6 +108,9 @@ class CantileverBeam:
 
     def getaccelg(self,pos):
         return (self.a[pos] + np.random.randn()*self.noisestd)/9.80665
+    
+    def getrotationvel(self,pos):
+        return self.rotvel[pos] + np.random.randn()*self.noisestd
 
     def reset(self):
         self.f = np.zeros(self.npoints)
