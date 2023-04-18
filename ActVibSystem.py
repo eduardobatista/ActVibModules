@@ -1,4 +1,5 @@
 import pandas as pd
+from numpy import arange
 
 class ActVibData(pd.DataFrame):
 
@@ -73,6 +74,13 @@ class ActVibData(pd.DataFrame):
         if len(adccols) == 0:
             raise BaseException("ADC data not found.")
         return self[adccols[adcid-1]].values
+    
+    def getadc1k(self):
+        adccols = list(filter(lambda x: x.startswith("adc"), self.getSignalNames()))
+        if len(adccols) == 0:
+            raise BaseException("ADC data not found.")
+        timevec = arange(0,self["time"].values[-1]+4e-3,1e-3)
+        return timevec,self[adccols].values.reshape((self.shape[0]*4))
 
     def getADC1kHzData(self):
         adccols = list(filter(lambda x: x.startswith("adc"), self.getSignalNames()))
