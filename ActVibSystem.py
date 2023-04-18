@@ -2,8 +2,11 @@ import pandas as pd
 
 class ActVibData(pd.DataFrame):
 
-    def __init__(self,filename):        
-        super().__init__(pd.read_feather(filename))
+    def __init__(self,filename):    
+        if filename.endswith(".csv"):
+            super().__init__(pd.read_csv(filename,index_col=0))
+        else:    
+            super().__init__(pd.read_feather(filename))
         self.filename = filename        
         if "Tempo (s)" in self.columns:
             self.oldcnamestonew()
