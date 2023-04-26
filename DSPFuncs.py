@@ -1,4 +1,5 @@
 import numpy as np
+from scipy import signal
 
 def easyFourier(x: np.ndarray, fs: float = 1.0, N: int = None, downsamplemode: str = "decimate"):
   """
@@ -68,3 +69,29 @@ class DCRemover():
     return sf.y
 
 
+def NLargestPeaks(n,freq,mag,distance=20):
+  pks = signal.find_peaks(mag,distance=distance)
+  freqpks = freq[pks[0]]
+  magpks = mag[pks[0]]
+  idxnlargest = np.argsort(magpks)[-n:]
+  freqpks = freqpks[idxnlargest]
+  magpks = magpks[idxnlargest]
+  idxsortbyfreq = np.argsort(freqpks)
+  freqpks = freqpks[idxsortbyfreq]
+  magpks = magpks[idxsortbyfreq]
+  return {'freqs':freqpks, 'mags': magpks}
+
+
+def freqAnalysis(signal,axis,fs=250,removeDC=True,labelsize=8,npeaks=3,peakdistance=50):
+  if removeDC:
+    mag,freq = easyFourier(signal - np.mean(signal),fs=fs)
+  else:
+    mag,freq = easyFourier(signal,fs=fs)
+
+  axis.plot(freq,mag)
+  # axis.set_ylim(-100,20)
+  axis.tick_params(labelsize=labelsize)
+  pks = NLargestPeaks(npeaks,freq,mag,distance=peakdistance)
+  axis.plot(pks['freqs'],pks['mags'],"xr")
+  for f,m in zip(pks['freqs'],pks['mags']):
+    axis.text(f,m,f" {f:.2f} Hz",fontsize=7)

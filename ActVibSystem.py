@@ -103,5 +103,4 @@ class ActVibData(pd.DataFrame):
         logs = self[["time","log"]][self["log"].notnull()].values.tolist()
         if logs[0][1] != "Started":
             logs = logs[1:]
-        return logs
-        
+        return logs        
