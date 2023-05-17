@@ -105,6 +105,21 @@ class FIRFxNLMS:
 			sf.update = sf.NLMSupdate
 
 
+class LeakyFxNLMS (FIRFxNLMS):
+
+	def __init__(sf,mem,memsec,leakfactor):
+		super().__init__(mem,memsec)
+		sf.leakfactor = leakfactor
+
+	def LMSupdate(sf,e):
+		sf.norm = sf.ww @ sf.ww
+		sf.ww = sf.leakfactor * sf.ww + 2 * sf.mu * e * sf.xxf
+
+	def NLMSupdate(sf,e):
+		sf.norm = sf.ww @ sf.ww
+		sf.ww = sf.leakfactor * sf.ww + sf.mu * e * sf.xxf / ((sf.xxf@sf.xxf) + sf.fi)
+		
+
 class CVAFxNLMS:
 
 	def __init__(sf,mem,memsec=0,mem2=0,memsec2=0):
