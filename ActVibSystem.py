@@ -5,7 +5,7 @@ class ActVibData(pd.DataFrame):
 
     def __init__(self,filename):    
         if str(filename).endswith(".csv"):
-            super().__init__(pd.read_csv(filename,index_col=0))
+            super().__init__(pd.read_csv(filename,index_col=0,sep="\t"))
         else:    
             super().__init__(pd.read_feather(filename))
         self.filename = filename        
