@@ -1,7 +1,7 @@
 import numpy as np
 from scipy import signal
 
-def easyFourier(x: np.ndarray, fs: float = 1.0, N: int = None, downsamplemode: str = "decimate"):
+def easyFourier(x: np.ndarray, fs: float = 1.0, N: int = None, phasealso: bool = False, downsamplemode: str = "decimate"):
   """
     Evaluate the magnitude Fourier spectrum in dB using the FFT.
     Parameters:
@@ -19,19 +19,30 @@ def easyFourier(x: np.ndarray, fs: float = 1.0, N: int = None, downsamplemode: s
   """
   nsamples = x.shape[0]
   if downsamplemode == "decimate":
-    magdb = 20*np.log10( 2*np.abs(np.fft.fft(x)/nsamples)[0:int(np.floor(nsamples/2))] )
+    fftaux = np.fft.fft(x)
+    magdb = 20*np.log10( 2*np.abs(fftaux/nsamples)[0:int(np.floor(nsamples/2))] )
     freqs = (np.fft.fftfreq(nsamples) * fs)[0:magdb.shape[0]]
     if N:
       factor = int(np.ceil(float(nsamples)/float(N)))
-      return magdb[::factor],freqs[::factor]
+      if phasealso:
+        return magdb[::factor],freqs[::factor],np.angle(fftaux[0:int(np.floor(nsamples/2))][::factor])
+      else:
+        return magdb[::factor],freqs[::factor]
     else:
-      return magdb,freqs
+      if phasealso:
+        return magdb,freqs,np.angle(fftaux[0:int(np.floor(nsamples/2))])
+      else:
+        return magdb,freqs
   elif downsamplemode == "truncate":
     if not N:
       N = nsamples
-    magdb = 20*np.log10( 2*np.abs(np.fft.fft(x,N)/N)[0:int(np.floor(N/2))] )
+    fftaux = np.fft.fft(x,N)
+    magdb = 20*np.log10( 2*np.abs(fftaux/N)[0:int(np.floor(N/2))] )
     freqs = (np.fft.fftfreq(N) * fs)[0:magdb.shape[0]]
-    return magdb,freqs
+    if phasealso:
+      return magdb,freqs,np.angle(fftaux[0:int(np.floor(nsamples/2))])
+    else:
+      return magdb,freqs
   else:
     raise BaseException("Invalid value for downsamplemode.")
 
