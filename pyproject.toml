@@ -11,7 +11,7 @@ dependencies = [
     "pyarrow",
     "scipy"
 ]
-da
+
 # Manter todos os módulos do pacote na raiz do projeto constitui uma topologia não padrão.
 # Para alcançar o comportamento esperado (import ActVibModules.<modulo>) é necessário:
 #   --> Importar os arquivos na raiz do projeto
