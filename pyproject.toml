@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "ActVibModules"
@@ -11,6 +11,16 @@ dependencies = [
     "pyarrow",
     "scipy"
 ]
+da
+# Manter todos os módulos do pacote na raiz do projeto constitui uma topologia não padrão.
+# Para alcançar o comportamento esperado (import ActVibModules.<modulo>) é necessário:
+#   --> Importar os arquivos na raiz do projeto
+#   --> Alterar a raiz da build para emular a estrutura "ActVibModules/<modulo>.py"
 
-[tool.setuptools.packages]
-find = {}  # Scan the project directory with the default parameters
+[tool.hatch.build.targets.wheel]
+include = [
+   "*.py" # Importa todos os arquivos .py na raiz do projeto
+]
+
+[tool.hatch.build.targets.wheel.sources]
+"" = "ActVibModules" # Altera a raiz da build
