@@ -1,2 +1,4 @@
 Aux_Collab.ipynb
+.venv
+uv.lock
 __pycache__

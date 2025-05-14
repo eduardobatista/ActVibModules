@@ -9,7 +9,10 @@ dependencies = [
     "numpy",
     "pandas",
     "pyarrow",
-    "scipy"
+    "scipy",
+    "plotly",
+    "ipykernel",
+    "nbformat",
 ]
 
 # Manter todos os módulos do pacote na raiz do projeto constitui uma topologia não padrão.
