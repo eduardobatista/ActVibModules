@@ -11,23 +11,26 @@ from Adaptive import FIRNLMS, FIRFxNLMS
 # %%
 fs = 250.0 # Sampling frequency
 
+# Beam characteristics:
 npoints = 100 # Number of points in the beam (finite element method)
 beamlength = 0.58 # Length of the beam in meters
 beamwidth = 0.05 # Width of the beam in meters
 beamthickness = 0.006 # Thickness of the beam in meters
+dampingfactors = [0.01, 0.01, 0.01, 0.01, 0.01] 
 
-perturbpos = 30 # Position of the perturbation (force) in the beam
-accelpos = 75 # Position of the acceleration measurement in the beam
 
-controlpos = 60 # Position of the control force in the beam
-erroraccelpos = 95 # Position of the error acceleration measurement in the beam
+# Positions of sensors and forces:
+perturbpos = 30 # Position of the perturbation force, which causes beam vibration.
+referencepos = 75 # Position of the acceleration measurement at the beam.
+controlpos = 60 # Position of the control force
+errorpos = 95 # Position of the error acceleration measurement in the beam
 
 
 
 # %% Creating Beam instance with 100 points:
 cbeam = CantileverBeam(npoints=npoints, width=beamwidth, thickness=beamthickness, 
                         length=beamlength, Tsampling=1.0/fs,
-                        damp=[0.01, 0.01, 0.01, 0.01, 0.01],)
+                        damp=dampingfactors)
 cbeam.reset()
 print("Natural frequencies are:\n",
       ",\n".join(cbeam.freqsHz.astype(str).tolist()),
@@ -41,13 +44,13 @@ fig.add_trace(go.Scatter(x=xcoords, y=ycoords, fill='toself', mode='lines'))
 fig.add_annotation(x=perturbpos*beamlength/npoints, y=beamthickness*1.1, 
             ax=0, ay=-30, text="Perturbation",
             showarrow=True, arrowhead=1)
-fig.add_annotation(x=accelpos*beamlength/npoints, y=beamthickness*1.1, 
+fig.add_annotation(x=referencepos*beamlength/npoints, y=beamthickness*1.1, 
             ax=0, ay=-50, text="Accel. Measurement",
             showarrow=True, arrowhead=1, arrowside="start")
 fig.add_annotation(x=controlpos*beamlength/npoints, y=0, 
             ax=0, ay=30, text="Control Force",
             showarrow=True, arrowhead=1)
-fig.add_annotation(x=erroraccelpos*beamlength/npoints, y=0, 
+fig.add_annotation(x=errorpos*beamlength/npoints, y=0, 
             ax=0, ay=50, text="Error Accel.",
             showarrow=True, arrowhead=1, arrowside="start")
 fig.update_layout(title="Cantilever Beam", xaxis_title="x (m)", yaxis_title="y (m)")
@@ -65,21 +68,22 @@ nsteps = int(maxtime * fs) # Total number of steps
 vibfreq = 10.0 # Hertz
 th = np.linspace(0.0,maxtime,nsteps) # Time vector
 xh = 0.3*np.sin(2*np.pi*th*vibfreq) # Sinusoidal force vector
-xh[0:int(fs*vibstart)] = 0.0 # Force is zero for the first 10 seconds
+xh[0:int(fs*vibstart)] = 0.0 # Force set to zero for the first 10 seconds
 
 cbeam.reset()
-y = np.zeros(nsteps) # Vibration response
+err = np.zeros(nsteps) # Vibration response
 # Running simulation:
 for k in range(nsteps):
-  y[k] = cbeam.getaccelms2(accelpos) # Lê aceleração na posição 95 (viga foi criada com 100 pontos, esse índice varia de 0 a 99. 95 é perto da extremidade livre da viga.)
-  cbeam.setforce(perturbpos,xh[k]) # Aplica força na posição 70
-  cbeam.update() # Atualiza a viga por 1 período de amostragem.
+  err[k] = cbeam.getaccelms2(referencepos)  
+  cbeam.setforce(perturbpos,xh[k]) 
+  cbeam.update() # Updata for 1 sampling period.
 
 # Plotting the results:
 fig = px.line()
 fig.add_scatter(x=th, y=xh, name="Força (N)", mode="lines")
-fig.add_scatter(x=th, y=y, name="Aceleração (m/s²)", mode="lines")
+fig.add_scatter(x=th, y=err, name="Aceleração (m/s²)", mode="lines")
 fig.show()
+
 
 
 # %% Active control requires modeling both the secondary and feedback paths:
@@ -99,11 +103,11 @@ wsecimpulse = np.zeros(firmem) # Impulse response vector
 cbeam.reset()
 cbeam.setforce(controlpos,1.0) # Force is applied at the control position
 cbeam.update()
-wsecimpulse[0] = cbeam.getaccelms2(erroraccelpos) # Read the acceleration at the error position
+wsecimpulse[0] = cbeam.getaccelms2(errorpos) # Read the acceleration at the error position
 cbeam.setforce(controlpos,0.0) # Force is removed
 for k in range(1,firmem):
   cbeam.update() # Update the beam for 1 sampling period.
-  wsecimpulse[k] = cbeam.getaccelms2(erroraccelpos) # Read the acceleration at the error position
+  wsecimpulse[k] = cbeam.getaccelms2(errorpos) # Read the acceleration at the error position
 
 
 # Secondary path via adaptive modeling (the practical way):
@@ -113,7 +117,7 @@ yerror = np.zeros(nsteps) # Error signal vector
 for k in range(nsteps):
   cbeam.setforce(controlpos,xrandom[k]) # Force is applied at the control position
   cbeam.update() # Update the beam for 1 sampling period.
-  yerror[k] = cbeam.getaccelms2(erroraccelpos) # Read the acceleration at the error position
+  yerror[k] = cbeam.getaccelms2(errorpos) # Read the acceleration at the error position
 
 firnlms.run(insignal=xrandom,outsignal=yerror,maxiter=nsteps) # Run the FIRNLMS algorithm
 wsecadaptive = firnlms.ww # Adaptive model of the secondary path
@@ -122,6 +126,7 @@ wsecadaptive = firnlms.ww # Adaptive model of the secondary path
 fig = px.line()
 fig.add_scatter(y=wsecimpulse, name="Impulse response", mode="lines")
 fig.add_scatter(y=wsecadaptive, name="Adaptive model", mode="lines")
+fig.update_layout(title="Secondary path response (FIR)")
 fig.show() # Plot the secondary path coefficients
 
 # %% Feedback path via impulse response (ideal but not practical):
@@ -130,11 +135,11 @@ wfbkimpulse = np.zeros(firmem) # Impulse response vector
 cbeam.reset()
 cbeam.setforce(controlpos,1.0) # Force is applied at the control position
 cbeam.update()
-wfbkimpulse[0] = cbeam.getaccelms2(accelpos) # Read the acceleration at the error position
+wfbkimpulse[0] = cbeam.getaccelms2(referencepos) # Read the acceleration at the error position
 cbeam.setforce(controlpos,0.0) # Force is removed
 for k in range(1,firmem):
   cbeam.update() # Update the beam for 1 sampling period.
-  wfbkimpulse[k] = cbeam.getaccelms2(accelpos) # Read the acceleration at the error position
+  wfbkimpulse[k] = cbeam.getaccelms2(referencepos) # Read the acceleration at the error position
 
 
 # Secondary path via adaptive modeling (the practical way):
@@ -144,7 +149,7 @@ yerror = np.zeros(nsteps) # Error signal vector
 for k in range(nsteps):
   cbeam.setforce(controlpos,xrandom[k]) # Force is applied at the control position
   cbeam.update() # Update the beam for 1 sampling period.
-  yerror[k] = cbeam.getaccelms2(accelpos) # Read the acceleration at the error position
+  yerror[k] = cbeam.getaccelms2(referencepos) # Read the acceleration at the error position
 
 firnlms.run(insignal=xrandom,outsignal=yerror,maxiter=nsteps) # Run the FIRNLMS algorithm
 wfbkadaptive = firnlms.ww # Adaptive model of the secondary path
@@ -153,6 +158,7 @@ wfbkadaptive = firnlms.ww # Adaptive model of the secondary path
 fig = px.line()
 fig.add_scatter(y=wfbkimpulse, name="Impulse response", mode="lines")
 fig.add_scatter(y=wfbkadaptive, name="Adaptive model", mode="lines")
+fig.update_layout(title="Feedback path response")
 fig.show() # Plot the secondary path coefficients
 
 
@@ -160,7 +166,7 @@ fig.show() # Plot the secondary path coefficients
 # %% Now, after obtaining the secondary and feedback responses,
 # the active control using the FIRFxNLMS algorithm can be performed:
 
-maxtime = 200.0
+maxtime = 120.0
 nsteps = int(maxtime * fs) # Total number of steps
 vibstart = 0.0 # Start time of the vibration
 controlstart = 30.0 # Start time of the control
@@ -181,7 +187,7 @@ xh = 0.3*np.sin(2*np.pi*th*vibfreq) # Sinusoidal force vector
 xh[0:int(fs*vibstart)] = 0.0 # Force is zero for the first 10 seconds
 
 cbeam.reset()
-y = np.zeros(nsteps) # Vibration response
+err = np.zeros(nsteps) # Vibration response
 yfbk = np.zeros(nsteps) # Vibration response
 
 # Running the simulation:
@@ -190,20 +196,18 @@ for k in range(nsteps):
   cbeam.setforce(controlpos,-controller.y) # Control force is applied
 
   if th[k] >= controlstart: # Control starts at 30 seconds
-    controller.update(cbeam.getaccelms2(erroraccelpos)) 
+    controller.update(cbeam.getaccelms2(errorpos)) 
   yfbk[k] = feedbackfilter.filterstep(-controller.y) # Get the feedback force
-  controller.evalout(cbeam.getaccelms2(accelpos) - yfbk[k])
+  controller.evalout(cbeam.getaccelms2(referencepos) - yfbk[k])
 
-  y[k] = cbeam.getaccelms2(erroraccelpos) # Error acceleration is read
+  err[k] = cbeam.getaccelms2(errorpos) # Error acceleration is read
 
   cbeam.update() # beam is updated
 
 # Plotting the results:
 fig = px.line()
-fig.add_scatter(x=th, y=xh, name="Força (N)", mode="lines")
-fig.add_scatter(x=th, y=y, name="Aceleração (m/s²)", mode="lines")
+fig.add_scatter(x=th, y=xh, name="Perturbation force (N)", mode="lines")
+fig.add_scatter(x=th, y=err, name="Beam accelaration (m/s²)", mode="lines")
 fig.show()
-
-
 
 # %%
