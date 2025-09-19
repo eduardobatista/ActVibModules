@@ -170,7 +170,7 @@ nsteps = int(maxtime * fs) # Total number of steps
 vibstart = 0.0 # Start time of the vibration
 controlstart = 30.0 # Start time of the control
 
-controller = FIRFxNLMS(mem=300, memsec=1000) # Create the controller
+controller = FIRFxNLMS(mem=300, memsec=firmem) # Create the controller
 controller.setSecondary(wsecimpulse) # Set the secondary path
 controller.setAlgorithm('NLMS') # Set the algorithm to NLMS
 controller.mu = 0.001 # Set the step size

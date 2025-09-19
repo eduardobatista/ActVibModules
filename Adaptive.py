@@ -61,7 +61,7 @@ class FIRFxNLMS:
 			sf.xxf = np.zeros(mem)
 		else:
 			sf.memsec = 0
-		sf.vecsize = (mem if (mem > memsec) else memsec);
+		sf.vecsize = (mem if (mem > memsec) else memsec)
 		sf.xx = np.zeros(sf.vecsize) # Input vector
 		sf.y = 0 # Filter output
 		sf.e = 0 # Error
