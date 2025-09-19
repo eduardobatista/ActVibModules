@@ -9,7 +9,7 @@ from Adaptive import FIRNLMS, FIRFxNLMS
 
 
 # %%
-fs = 250.0 # Sampling frequency
+fs = 416.0 # Sampling frequency in Hertz
 
 # Beam characteristics:
 npoints = 100 # Number of points in the beam (finite element method)
@@ -25,6 +25,7 @@ referencepos = 75 # Position of the acceleration measurement at the beam.
 controlpos = 60 # Position of the control force
 errorpos = 95 # Position of the error acceleration measurement in the beam
 
+firmem = 1000 # Number of samples for the secondary and feedback paths
 
 
 # %% Creating Beam instance with 100 points:
@@ -94,9 +95,7 @@ fig.show()
 maxtime = 100.0
 nsteps = int(maxtime * fs)
 
-firmem = 1000 # Number of samples for the secondary and feedback paths
 firnlms = FIRNLMS(memorysize=firmem,stepsize=0.15,regularization=1e-3) # Create the FIRNLMS object
-
 
 # Secondary path via impulse response (ideal but not practical):
 wsecimpulse = np.zeros(firmem) # Impulse response vector
@@ -174,7 +173,7 @@ controlstart = 30.0 # Start time of the control
 controller = FIRFxNLMS(mem=300, memsec=1000) # Create the controller
 controller.setSecondary(wsecimpulse) # Set the secondary path
 controller.setAlgorithm('NLMS') # Set the algorithm to NLMS
-controller.mu = 0.01 # Set the step size
+controller.mu = 0.001 # Set the step size
 controller.psi = 1e-3 # Set the regularization parameter
 controller.reset() # Reset the controller
 
